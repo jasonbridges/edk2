@@ -549,6 +549,8 @@ PeCoffLoaderGetPeHeader (
 
       if ((UINT64)SectionHeader.VirtualAddress + SectionHeader.Misc.VirtualSize > ImageSize) {
         ImageContext->ImageError = IMAGE_ERROR_INVALID_IMAGE_SIZE;
+        DEBUG ((DEBUG_ERROR, "PeCoffLoader: Section extends beyond image: VA=0x%x Size=0x%x ImageSize=0x%lx\n",
+          SectionHeader.VirtualAddress, SectionHeader.Misc.VirtualSize, ImageSize));
         return RETURN_UNSUPPORTED;
       }
     }
@@ -1148,6 +1150,8 @@ PeCoffLoaderRelocateImage (
           case EFI_IMAGE_REL_BASED_HIGH:
             if ((UINTN)Fixup > (UINTN)ImageContext->ImageAddress + ImageContext->ImageSize - sizeof (UINT16)) {
               ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
+              DEBUG ((DEBUG_ERROR, "PeCoffLoader: Relocation out of bounds (HIGH): Fixup=0x%p ImageBase=0x%lx ImageSize=0x%lx\n",
+                Fixup, (UINT64)(UINTN)ImageContext->ImageAddress, ImageContext->ImageSize));
               return RETURN_LOAD_ERROR;
             }
 
@@ -1163,6 +1167,8 @@ PeCoffLoaderRelocateImage (
           case EFI_IMAGE_REL_BASED_LOW:
             if ((UINTN)Fixup > (UINTN)ImageContext->ImageAddress + ImageContext->ImageSize - sizeof (UINT16)) {
               ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
+              DEBUG ((DEBUG_ERROR, "PeCoffLoader: Relocation out of bounds (LOW): Fixup=0x%p ImageBase=0x%lx ImageSize=0x%lx\n",
+                Fixup, (UINT64)(UINTN)ImageContext->ImageAddress, ImageContext->ImageSize));
               return RETURN_LOAD_ERROR;
             }
 
@@ -1178,6 +1184,8 @@ PeCoffLoaderRelocateImage (
           case EFI_IMAGE_REL_BASED_HIGHLOW:
             if ((UINTN)Fixup > (UINTN)ImageContext->ImageAddress + ImageContext->ImageSize - sizeof (UINT32)) {
               ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
+              DEBUG ((DEBUG_ERROR, "PeCoffLoader: Relocation out of bounds (HIGHLOW): Fixup=0x%p ImageBase=0x%lx ImageSize=0x%lx\n",
+                Fixup, (UINT64)(UINTN)ImageContext->ImageAddress, ImageContext->ImageSize));
               return RETURN_LOAD_ERROR;
             }
 
@@ -1194,6 +1202,8 @@ PeCoffLoaderRelocateImage (
           case EFI_IMAGE_REL_BASED_DIR64:
             if ((UINTN)Fixup > (UINTN)ImageContext->ImageAddress + ImageContext->ImageSize - sizeof (UINT64)) {
               ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
+              DEBUG ((DEBUG_ERROR, "PeCoffLoader: Relocation out of bounds (DIR64): Fixup=0x%p ImageBase=0x%lx ImageSize=0x%lx\n",
+                Fixup, (UINT64)(UINTN)ImageContext->ImageAddress, ImageContext->ImageSize));
               return RETURN_LOAD_ERROR;
             }
 
