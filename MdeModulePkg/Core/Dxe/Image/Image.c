@@ -711,6 +711,7 @@ CoreLoadPeImage (
       return Status;
     }
 
+    DEBUG ((DEBUG_INFO | DEBUG_LOAD, "CoreLoadPeImage: Allocated Image buffer at 0x%lx size 0x%lx pages %d\n", Image->ImageContext.ImageAddress, (UINT64)Image->NumberOfPages * EFI_PAGE_SIZE, Image->NumberOfPages));
     DstBufAlocated = TRUE;
   } else {
     //
@@ -736,6 +737,7 @@ CoreLoadPeImage (
 
     Image->NumberOfPages             = EFI_SIZE_TO_PAGES ((UINTN)Image->ImageContext.ImageSize + Image->ImageContext.SectionAlignment);
     Image->ImageContext.ImageAddress = DstBuffer;
+    DEBUG ((DEBUG_INFO | DEBUG_LOAD, "CoreLoadPeImage: Using caller buffer at 0x%lx size 0x%lx pages %d\n", Image->ImageContext.ImageAddress, (UINT64)Image->NumberOfPages * EFI_PAGE_SIZE, Image->NumberOfPages));
   }
 
   Image->ImageBasePage = Image->ImageContext.ImageAddress;
@@ -921,6 +923,12 @@ CoreLoadedImageInfo (
              (VOID **)&LoadedImage
              );
   if (!EFI_ERROR (Status)) {
+    Image = BASE_CR (LoadedImage, LOADED_IMAGE_PRIVATE_DATA, Info);
+    if (Image->Signature != LOADED_IMAGE_PRIVATE_DATA_SIGNATURE) {
+      DEBUG ((DEBUG_ERROR, "CoreLoadedImageInfo: Bad Signature on ImageHandle %p\n", ImageHandle));
+      DEBUG ((DEBUG_ERROR, "  Image Struct: %p\n", Image));
+      DEBUG ((DEBUG_ERROR, "  Signature: 0x%08x (Expected 0x%08x)\n", Image->Signature, LOADED_IMAGE_PRIVATE_DATA_SIGNATURE));
+    }
     Image = LOADED_IMAGE_PRIVATE_DATA_FROM_THIS (LoadedImage);
   } else {
     DEBUG ((DEBUG_LOAD, "CoreLoadedImageInfo: Not an ImageHandle %p\n", ImageHandle));
@@ -1335,6 +1343,7 @@ CoreLoadImageCommon (
     Status = EFI_OUT_OF_RESOURCES;
     goto Done;
   }
+  DEBUG ((DEBUG_INFO | DEBUG_LOAD, "CoreLoadImageCommon: Allocated Image struct at %p\n", Image));
 
   //
   // Pull out just the file portion of the DevicePath for the LoadedImage FilePath
