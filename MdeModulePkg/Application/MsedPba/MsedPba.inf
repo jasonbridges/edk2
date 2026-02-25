@@ -1,0 +1,40 @@
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = MsedPba
+  FILE_GUID                      = 426E7754-D81B-49EA-85AD-69EAA7B1539C
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = UefiMain
+
+[Sources]
+  MsedPba.c
+  UnlockOpal.c
+  UnlockOpal.h
+  MsedStructures.h
+  MsedEndianFixup.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  CryptoPkg/CryptoPkg.dec
+
+[LibraryClasses]
+  UefiApplicationEntryPoint
+  UefiLib
+  UefiBootServicesTableLib
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  DebugLib
+  BaseCryptLib
+  PrintLib
+
+[Protocols]
+  gEfiStorageSecurityCommandProtocolGuid ## CONSUMES
+  gEfiBlockIoProtocolGuid                ## CONSUMES
+  gEfiDiskInfoProtocolGuid               ## CONSUMES
+
+[Guids]
+  gEfiDiskInfoIdeInterfaceGuid      ## CONSUMES
+  gEfiDiskInfoAhciInterfaceGuid     ## CONSUMES
+  gEfiDiskInfoNvmeInterfaceGuid     ## CONSUMES
