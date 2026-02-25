@@ -343,7 +343,7 @@ UnlockOpal (
     PassPos += 0x5c; // Offset in StartSession command
 
     // gc_pbkdf2_sha1(pass, strnlen(pass, 256), (char *) disk_info->serialNum, 20, 75000, passpos, 32);
-    Pkcs5HashPassword(
+    if (!Pkcs5HashPassword(
         AsciiStrLen(Pass),
         Pass,
         20,
@@ -352,7 +352,11 @@ UnlockOpal (
         SHA1_DIGEST_SIZE,
         32,
         (UINT8 *)PassPos
-        );
+        )) {
+      DEBUG((DEBUG_ERROR, "Pkcs5HashPassword failed\n"));
+      Status = EFI_ABORTED;
+      goto Done;
+    }
 
     Status = Exec(Ssp, MediaId, Cmd, Resp, ComId);
     if (EFI_ERROR(Status)) {

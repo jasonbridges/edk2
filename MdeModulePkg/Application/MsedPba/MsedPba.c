@@ -12,6 +12,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/UefiLib.h>
 #include <Library/DebugLib.h>
 #include <Library/PrintLib.h>
@@ -20,6 +21,11 @@
 #include <Protocol/DiskInfo.h>
 
 #include "UnlockOpal.h"
+
+//
+// 426E7754-D81B-49EA-85AD-69EAA7B1539C
+//
+EFI_GUID gMsedPbaConfigGuid = { 0x426E7754, 0xD81B, 0x49EA, { 0x85, 0xAD, 0x69, 0xEA, 0xA7, 0xB1, 0x53, 0x9C } };
 
 //
 // NVMe Identify Controller Data Structure (partial)
@@ -216,35 +222,52 @@ UefiMain (
         }
       }
 
-      Print(L"Enter Password: ");
-      // Simple input loop
-      InputIndex = 0;
-      ZeroMem(InputBuffer, sizeof(InputBuffer));
-      ZeroMem(PassBuffer, sizeof(PassBuffer));
+      //
+      // Check if password variable exists
+      //
+      UINTN PassSize = sizeof(PassBuffer) - 1;
+      Status = gRT->GetVariable(
+                      L"MsedPbaPassword",
+                      &gMsedPbaConfigGuid,
+                      NULL,
+                      &PassSize,
+                      PassBuffer
+                      );
 
-      while (InputIndex < 255) {
-        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
-        Status = gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
-        if (EFI_ERROR(Status)) continue;
+      if (!EFI_ERROR(Status) && PassSize > 0) {
+        PassBuffer[PassSize] = 0; // Ensure null termination
+        Print(L"  Using MsedPbaPassword variable.\n");
+      } else {
+        Print(L"Enter Password: ");
+        // Simple input loop
+        InputIndex = 0;
+        ZeroMem(InputBuffer, sizeof(InputBuffer));
+        ZeroMem(PassBuffer, sizeof(PassBuffer));
 
-        if (Key.UnicodeChar == '\r') {
-          Print(L"\n");
-          break;
-        } else if (Key.UnicodeChar == '\b') {
-          if (InputIndex > 0) {
-            InputIndex--;
-            InputBuffer[InputIndex] = 0;
-            Print(L"\b \b");
+        while (InputIndex < 255) {
+          gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+          Status = gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+          if (EFI_ERROR(Status)) continue;
+
+          if (Key.UnicodeChar == '\r') {
+            Print(L"\n");
+            break;
+          } else if (Key.UnicodeChar == '\b') {
+            if (InputIndex > 0) {
+              InputIndex--;
+              InputBuffer[InputIndex] = 0;
+              Print(L"\b \b");
+            }
+          } else if (Key.UnicodeChar >= 0x20 && Key.UnicodeChar < 0x7F) {
+            InputBuffer[InputIndex++] = Key.UnicodeChar;
+            Print(L"*"); // Echo *
           }
-        } else if (Key.UnicodeChar >= 0x20 && Key.UnicodeChar < 0x7F) {
-          InputBuffer[InputIndex++] = Key.UnicodeChar;
-          Print(L"*"); // Echo *
         }
-      }
-      InputBuffer[InputIndex] = 0;
+        InputBuffer[InputIndex] = 0;
 
-      // Convert to ASCII
-      UnicodeStrToAsciiStrS(InputBuffer, PassBuffer, sizeof(PassBuffer));
+        // Convert to ASCII
+        UnicodeStrToAsciiStrS(InputBuffer, PassBuffer, sizeof(PassBuffer));
+      }
 
       Status = UnlockOpal(Ssp, BlockIo->Media->MediaId, PassBuffer, &DiskInfo);
       if (!EFI_ERROR(Status)) {
